@@ -9,3 +9,4 @@ streamlit
 plotly
 python-multipart
 jinja2
+pydantic-settings
