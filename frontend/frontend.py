@@ -173,7 +173,7 @@ st.markdown("""
 # ============================================
 # API CONFIGURATION
 # ============================================
-API_BASE_URL = "https://crimehotspotproject2-1.onrender.com"
+API_BASE_URL = "https://crimehotspotproject2-1.onrender.com/api"
 
 
 
