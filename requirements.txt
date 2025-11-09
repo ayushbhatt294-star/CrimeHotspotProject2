@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+pydantic
+pandas
+scikit-learn
+streamlit
+plotly
+python-multipart
+jinja2

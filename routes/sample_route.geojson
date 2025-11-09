@@ -1,0 +1,12 @@
+{
+  "type": "Feature",
+  "geometry": {
+    "type": "LineString",
+    "coordinates": []
+  },
+  "properties": {
+    "route_id": "sample",
+    "created_at": "2024-01-18T00:00:00Z",
+    "provider": "sample"
+  }
+}

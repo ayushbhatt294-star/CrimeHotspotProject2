@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crime Hotspot Mapping - Uttarakhand</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: #0f0f1e;
+        }
+
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+
+        #sidebar {
+            width: 360px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        #map {
+            flex: 1;
+            height: 100vh;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+        }
+
+        h2 {
+            font-size: 15px;
+            margin-top: 18px;
+            margin-bottom: 10px;
+            color: #ecf0f1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section {
+            margin-bottom: 18px;
+            background: rgba(255,255,255,0.05);
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #bdc3c7;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 9px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            font-size: 12px;
+            background: rgba(255,255,255,0.9);
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        button {
+            width: 100%;
+            padding: 11px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        button.warning {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .station-info {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.4);
+        }
+
+        .station-info strong {
+            color: #00d4ff;
+            font-size: 13px;
+        }
+
+        .station-info div {
+            font-size: 11px;
+            margin-top: 4px;
+            color: #bdc3c7;
+        }
+
+        .legend {
+            background: rgba(255,255,255,0.08);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 2px solid rgba(255,255,255,0.4);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #00d4ff;
+            font-size: 15px;
+        }
+
+        #status {
+            padding: 10px;
+            margin-top: 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 11px;
+            display: none;
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #status.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            display: block;
+            box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
+        }
+
+        #status.error {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            display: block;
+            box-shadow: 0 4px 15px rgba(235, 51, 73, 0.3);
+        }
+
+        .search-box {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            background: rgba(26, 26, 46, 0.95);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .search-box input {
+            width: 280px;
+            margin: 0;
+            background: rgba(255,255,255,0.95);
+            font-size: 12px;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 0;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+        }
+
+        .leaflet-popup-content {
+            margin: 14px;
+            font-size: 12px;
+        }
+
+        .leaflet-popup-tip {
+            background: #16213e;
+        }
+
+        .popup-title {
+            font-weight: bold;
+            color: #00d4ff;
+            font-size: 14px;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .popup-detail {
+            margin: 5px 0;
+            line-height: 1.5;
+            font-size: 11px;
+        }
+
+        .popup-detail strong {
+            color: #00d4ff;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            color: white;
+            padding: 22px 45px;
+            border-radius: 12px;
+            z-index: 9999;
+            display: none;
+            border: 2px solid #00d4ff;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .route-info {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 11px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            line-height: 1.7;
+        }
+
+        .route-info strong {
+            color: #00d4ff;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
+        }
+
+        /* Police Station Marker Styling */
+        .police-station-marker {
+            background: none;
+            border: none;
+            font-size: 35px;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+        }
+
+        /* Route distance warning */
+        .distance-warning {
+            background: rgba(255, 165, 0, 0.2);
+            border: 1px solid rgba(255, 165, 0, 0.5);
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 11px;
+            color: #ffa500;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <h1>🚔 Crime Hotspot - Uttarakhand</h1>
+            
+            <!-- Police Station Info -->
+            <div class="station-info">
+                <strong>🏛️ Base Station</strong>
+                <div>Dehradun Central Police Station</div>
+                <div>📍 Rajpur Road, Dehradun</div>
+                <div>☎️ 0135-2740000</div>
+            </div>
+            
+            <!-- Add Crime Section -->
+            <div class="section">
+                <h2>➕ Add Crime Incident</h2>
+                <label>Crime Type:</label>
+                <select id="crimeType">
+                    <option value="assault">🔴 Assault</option>
+                    <option value="burglary">🟠 Burglary</option>
+                    <option value="theft">🟡 Theft</option>
+                    <option value="vandalism">🟣 Vandalism</option>
+                    <option value="robbery">🔴 Robbery</option>
+                    <option value="vehicle_theft">🔵 Vehicle Theft</option>
+                    <option value="fraud">🟢 Fraud</option>
+                    <option value="drug_possession">💊 Drug Possession</option>
+                </select>
+
+                <label>Severity (1-5):</label>
+                <input type="number" id="severity" min="1" max="5" value="3">
+
+                <label>Area (Dehradun):</label>
+                <select id="areaName">
+                    <option value="Karanpur">Karanpur</option>
+                    <option value="Clock Tower">Clock Tower</option>
+                    <option value="Paltan Bazaar">Paltan Bazaar</option>
+                    <option value="Race Course">Race Course</option>
+                    <option value="Prem Nagar">Prem Nagar</option>
+                    <option value="Dalanwala">Dalanwala</option>
+                    <option value="Clement Town">Clement Town</option>
+                    <option value="Rajpur Road">Rajpur Road</option>
+                    <option value="Saharanpur Road">Saharanpur Road</option>
+                    <option value="ISBT">ISBT</option>
+                </select>
+
+                <label>Description:</label>
+                <textarea id="description" rows="2" placeholder="Brief description"></textarea>
+
+                <button onclick="enablePinMode()" class="success">📍 Click Map to Add</button>
+                <button onclick="addRandomCrimes()" class="warning">🎲 Add 20 Samples</button>
+            </div>
+
+            <!-- Actions -->
+            <div class="section">
+                <h2>🎯 Actions</h2>
+                <button onclick="loadCrimes()">🔄 Reload Crimes</button>
+                <button onclick="loadHotspots()">🔥 Show Hotspots</button>
+                <button onclick="createPatrolRoute()">🚓 Generate Route (≤20km)</button>
+                <button onclick="toggleHeatmap()">🌡️ Toggle Heat Map</button>
+                <button onclick="clearMap()" class="danger">🗑️ Clear All</button>
+            </div>
+
+            <!-- Statistics -->
+            <div class="section">
+                <h2>📊 Statistics</h2>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span>Total Crimes:</span>
+                        <span class="stat-value" id="totalCrimes">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Hotspots:</span>
+                        <span class="stat-value" id="totalHotspots">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>High Risk Zones:</span>
+                        <span class="stat-value" id="highRiskZones">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Avg Risk Score:</span>
+                        <span class="stat-value" id="avgRisk">0.0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route Info -->
+            <div class="section" id="routeInfoSection" style="display: none;">
+                <h2>🛣️ Route Information</h2>
+                <div class="route-info" id="routeInfo"></div>
+            </div>
+
+            <!-- Legend -->
+            <div class="section">
+                <h2>🎨 Crime Legend</h2>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF0000;"></div>
+                        <span>Assault</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF8C00;"></div>
+                        <span>Burglary</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FFD700;"></div>
+                        <span>Theft</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #9370DB;"></div>
+                        <span>Vandalism</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #DC143C;"></div>
+                        <span>Robbery</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4169E1;"></div>
+                        <span>Vehicle Theft</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #32CD32;"></div>
+                        <span>Fraud</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF69B4;"></div>
+                        <span>Drug Possession</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="status"></div>
+        </div>
+
+        <!-- Map -->
+        <div id="map"></div>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="searchBox" placeholder="🔍 Search in Dehradun..." onkeypress="handleSearch(event)">
+    </div>
+
+    <div id="loading">⏳ Loading...</div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - UTTARAKHAND
+        // ============================================
+        const API_URL = 'http://127.0.0.1:8000';
+        
+        // Dehradun Central Police Station (Fixed Start/End Point)
+        const POLICE_STATION = {
+            lat: 30.3165,
+            lng: 78.0322,
+            name: 'Dehradun Central Police Station'
+        };
+
+        const MAX_ROUTE_DISTANCE_KM = 20;  // Maximum patrol route distance
+        
+        const CRIME_COLORS = {
+            'assault': '#FF0000',
+            'burglary': '#FF8C00',
+            'theft': '#FFD700',
+            'vandalism': '#9370DB',
+            'robbery': '#DC143C',
+            'vehicle_theft': '#4169E1',
+            'fraud': '#32CD32',
+            'drug_possession': '#FF69B4'
+        };
+
+        // ============================================
+        // INITIALIZE MAP (CENTERED ON DEHRADUN)
+        // ============================================
+        
+        const map = L.map('map').setView([POLICE_STATION.lat, POLICE_STATION.lng], 13);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap | Uttarakhand Police',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Layer groups
+        const crimeMarkers = L.markerClusterGroup({
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: true,
+            spiderfyOnMaxZoom: true,
+            removeOutsideVisibleBounds: true
+        });
+        const hotspotLayer = L.layerGroup().addTo(map);
+        const routeLayer = L.layerGroup().addTo(map);
+        let heatmapLayer = null;
+        let isPinMode = false;
+        let routingControl = null;
+
+        map.addLayer(crimeMarkers);
+
+        // ============================================
+        // POLICE STATION MARKER (ALWAYS VISIBLE)
+        // ============================================
+        
+        const policeStationMarker = L.marker([POLICE_STATION.lat, POLICE_STATION.lng], {
+            icon: L.divIcon({
+                html: '🏛️',
+                className: 'police-station-marker',
+                iconSize: [40, 40]
+            }),
+            zIndexOffset: 1000
+        }).addTo(map);
+
+        policeStationMarker.bindPopup(`
+            <div class="popup-title">🏛️ ${POLICE_STATION.name}</div>
+            <div class="popup-detail"><strong>Base Station</strong></div>
+            <div class="popup-detail">All patrol routes start and end here</div>
+            <div class="popup-detail"><strong>Max Route:</strong> ${MAX_ROUTE_DISTANCE_KM} km</div>
+        `).openPopup();
+
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = type;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 4000);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // ============================================
+        // CRIME MANAGEMENT
+        // ============================================
+
+        function enablePinMode() {
+            isPinMode = true;
+            map.getCanvas().style.cursor = 'crosshair';
+            showStatus('Click on map to place crime marker', 'success');
+        }
+
+        map.on('click', async function(e) {
+            if (!isPinMode) return;
+
+            const crimeType = document.getElementById('crimeType').value;
+            const severity = parseInt(document.getElementById('severity').value);
+            const areaName = document.getElementById('areaName').value;
+            const description = document.getElementById('description').value || `${crimeType} incident in ${areaName}`;
+
+            const crimeData = {
+                crime_type: crimeType,
+                location: {
+                    lat: e.latlng.lat,
+                    lng: e.latlng.lng
+                },
+                timestamp: new Date().toISOString(),
+                severity: severity,
+                area_name: areaName,
+                description: description
+            };
+
+            try {
+                showLoading(true);
+                const response = await fetch(`${API_URL}/api/crimes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(crimeData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    addCrimeMarker(result);
+                    showStatus('✅ Crime added!', 'success');
+                    updateStats();
+                } else {
+                    showStatus('❌ Failed to add crime', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Server connection error', 'error');
+            } finally {
+                showLoading(false);
+            }
+
+            isPinMode = false;
+            map.getCanvas().style.cursor = '';
+        });
+
+        function addCrimeMarker(crime) {
+            const color = CRIME_COLORS[crime.crime_type] || '#808080';
+            
+            const marker = L.circleMarker([crime.location.lat, crime.location.lng], {
+                radius: 8,
+                fillColor: color,
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+
+            marker.bindPopup(`
+                <div class="popup-title">${crime.crime_type.toUpperCase()}</div>
+                <div class="popup-detail"><strong>Area:</strong> ${crime.area_name}</div>
+                <div class="popup-detail"><strong>Severity:</strong> ${crime.severity}/5</div>
+                <div class="popup-detail"><strong>Time:</strong> ${new Date(crime.timestamp).toLocaleString()}</div>
+                <div class="popup-detail"><strong>Details:</strong> ${crime.description}</div>
+            `);
+
+            crimeMarkers.addLayer(marker);
+        }
+
+        async function loadCrimes() {
+            showLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/api/crimes`);
+                if (!response.ok) throw new Error('Failed to fetch');
+                
+                const crimes = await response.json();
+                
+                crimeMarkers.clearLayers();
+                crimes.forEach(crime => addCrimeMarker(crime));
+                
+                showStatus(`✅ Loaded ${crimes.length} crimes`, 'success');
+                updateStats();
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error loading crimes', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function addRandomCrimes() {
+            showLoading(true);
+            const dehradunAreas = [
+                { name: 'Karanpur', lat: 30.3395, lng: 78.0531 },
+                { name: 'Clock Tower', lat: 30.3267, lng: 78.0441 },
+                { name: 'Paltan Bazaar', lat: 30.3180, lng: 78.0319 },
+                { name: 'Race Course', lat: 30.3173, lng: 78.0291 },
+                { name: 'Prem Nagar', lat: 30.3167, lng: 77.9718 },
+                { name: 'Dalanwala', lat: 30.3106, lng: 78.0511 },
+                { name: 'Clement Town', lat: 30.2671, lng: 78.0111 },
+                { name: 'Rajpur Road', lat: 30.3554, lng: 78.0641 }
+            ];
+            
+            const crimeTypes = Object.keys(CRIME_COLORS);
+            let added = 0;
+
+            for (let i = 0; i < 20; i++) {
+                const area = dehradunAreas[Math.floor(Math.random() * dehradunAreas.length)];
+                const randomLat = area.lat + (Math.random() - 0.5) * 0.01;
+                const randomLng = area.lng + (Math.random() - 0.5) * 0.01;
+                const randomType = crimeTypes[Math.floor(Math.random() * crimeTypes.length)];
+                
+                const crimeData = {
+                    crime_type: randomType,
+                    location: { lat: randomLat, lng: randomLng },
+                    timestamp: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    severity: Math.floor(Math.random() * 5) + 1,
+                    area_name: area.name,
+                    description: `Sample ${randomType} in ${area.name}`
+                };
+
+                try {
+                    const response = await fetch(`${API_URL}/api/crimes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(crimeData)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        addCrimeMarker(result);
+                        added++;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+
+            showLoading(false);
+            showStatus(`✅ Added ${added} sample crimes`, 'success');
+            updateStats();
+        }
+
+        // ============================================
+        // HOTSPOT DETECTION
+        // ============================================
+
+        async function loadHotspots() {
+            showLoading(true);
+            try {
+                const response = await fetch(`${API_URL}/api/hotspots?days_back=30`);
+                if (!response.ok) throw new Error('Failed');
+                
+                const hotspots = await response.json();
+                
+                hotspotLayer.clearLayers();
+
+                if (hotspots.length === 0) {
+                    showStatus('⚠️ No hotspots found. Add more crimes!', 'error');
+                    showLoading(false);
+                    return;
+                }
+
+                hotspots.forEach(hotspot => {
+                    const polygonCoords = hotspot.polygon.map(p => [p.lat, p.lng]);
+                    
+                    let color, fillColor;
+                    if (hotspot.risk_score >= 7) {
+                        color = '#FF0000';
+                        fillColor = '#FF0000';
+                    } else if (hotspot.risk_score >= 4) {
+                        color = '#FFA500';
+                        fillColor = '#FFA500';
+                    } else {
+                        color = '#FFFF00';
+                        fillColor = '#FFFF00';
+                    }
+
+                    const polygon = L.polygon(polygonCoords, {
+                        color: color,
+                        fillColor: fillColor,
+                        fillOpacity: 0.3,
+                        weight: 2
+                    });
+
+                    const crimeTypes = Object.entries(hotspot.crime_types)
+                        .map(([type, count]) => `${type}: ${count}`)
+                        .join('<br>');
+
+                    polygon.bindPopup(`
+                        <div class="popup-title">🔥 Hotspot Zone</div>
+                        <div class="popup-detail"><strong>Risk Score:</strong> ${hotspot.risk_score.toFixed(2)}/10</div>
+                        <div class="popup-detail"><strong>Total Crimes:</strong> ${hotspot.crime_count}</div>
+                        <div class="popup-detail"><strong>Radius:</strong> ${hotspot.radius.toFixed(2)} km</div>
+                        <div class="popup-detail"><strong>Crime Types:</strong><br>${crimeTypes}</div>
+                    `);
+
+                    hotspotLayer.addLayer(polygon);
+
+                    L.circleMarker([hotspot.center.lat, hotspot.center.lng], {
+                        radius: 6,
+                        fillColor: color,
+                        color: '#000',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 1
+                    }).addTo(hotspotLayer);
+                });
+
+                showStatus(`✅ Loaded ${hotspots.length} hotspots`, 'success');
+                updateStats();
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error loading hotspots', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ============================================
+        // PATROL ROUTE OPTIMIZATION (≤20km from station)
+        // ============================================
+
+        async function createPatrolRoute() {
+            showLoading(true);
+            
+            // Clear previous route
+            if (routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
+            }
+            routeLayer.clearLayers();
+            
+            try {
+                const hotspotsResponse = await fetch(`${API_URL}/api/hotspots?days_back=30`);
+                if (!hotspotsResponse.ok) throw new Error('Failed to fetch hotspots');
+                
+                const hotspots = await hotspotsResponse.json();
+
+                if (hotspots.length === 0) {
+                    showStatus('⚠️ No hotspots found. Generate hotspots first!', 'error');
+                    showLoading(false);
+                    return;
+                }
+
+                // Take top 3 hotspots (to keep route within 20km)
+                const patrolPoints = hotspots.slice(0, 3).map(h => ({
+                    lat: h.center.lat,
+                    lng: h.center.lng
+                }));
+
+                // Call backend to optimize route
+                const routeData = {
+                    patrol_points: patrolPoints,
+                    route_type: "hotspot_focused",
+                    max_distance_km: MAX_ROUTE_DISTANCE_KM
+                };
+
+                const response = await fetch(`${API_URL}/api/patrol/optimize-route`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(routeData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to create route');
+                }
+
+                const route = await response.json();
+
+                // Verify route starts at police station
+                if (Math.abs(route.waypoints[0].lat - POLICE_STATION.lat) > 0.001 ||
+                    Math.abs(route.waypoints[0].lng - POLICE_STATION.lng) > 0.001) {
+                    showStatus('⚠️ Route does not start at police station', 'error');
+                    showLoading(false);
+                    return;
+                }
+
+                // Check distance
+                if (route.total_distance > MAX_ROUTE_DISTANCE_KM) {
+                    showStatus(`⚠️ Route too long: ${route.total_distance}km > ${MAX_ROUTE_DISTANCE_KM}km`, 'error');
+                    showLoading(false);
+                    return;
+                }
+
+                // Use OSRM for real road routing
+                const waypoints = route.waypoints.map(w => L.latLng(w.lat, w.lng));
+
+                routingControl = L.Routing.control({
+                    waypoints: waypoints,
+                    routeWhileDragging: false,
+                    show: false,
+                    lineOptions: {
+                        styles: [{ color: '#0080ff', opacity: 0.8, weight: 4 }]
+                    },
+                    createMarker: function(i, waypoint, n) {
+                        if (i === 0 || i === n - 1) {
+                            // Police station marker (start/end)
+                            return L.marker(waypoint.latLng, {
+                                icon: L.divIcon({
+                                    html: '🏛️',
+                                    className: 'police-station-marker',
+                                    iconSize: [35, 35]
+                                })
+                            });
+                        } else {
+                            // Waypoint markers
+                            return L.marker(waypoint.latLng, {
+                                icon: L.divIcon({
+                                    html: `<div style="
+                                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                        color: white;
+                                        border-radius: 50%;
+                                        width: 30px;
+                                        height: 30px;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        font-weight: bold;
+                                        border: 3px solid white;
+                                        box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+                                        font-size: 13px;
+                                    ">${i}</div>`,
+                                    className: '',
+                                    iconSize: [30, 30]
+                                })
+                            });
+                        }
+                    }
+                }).addTo(map);
+
+                // Fit map to route
+                const bounds = L.latLngBounds(waypoints);
+                map.fitBounds(bounds, { padding: [50, 50] });
+
+                // Show route info
+                document.getElementById('routeInfoSection').style.display = 'block';
+                const routeInfoHTML = `
+                    <strong>Route ID:</strong> ${route.route_id}<br>
+                    <strong>Distance:</strong> ${route.total_distance} km ${route.total_distance <= MAX_ROUTE_DISTANCE_KM ? '✅' : '❌'}<br>
+                    <strong>Max Allowed:</strong> ${MAX_ROUTE_DISTANCE_KM} km<br>
+                    <strong>Est. Duration:</strong> ${route.estimated_duration} min<br>
+                    <strong>Waypoints:</strong> ${route.waypoints.length}<br>
+                    <strong>Type:</strong> ${route.route_type}<br>
+                    <strong>Start/End:</strong> ${POLICE_STATION.name}
+                `;
+                
+                document.getElementById('routeInfo').innerHTML = routeInfoHTML;
+
+                showStatus(`✅ Patrol route created! (${route.total_distance}km)`, 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ============================================
+        // HEATMAP VISUALIZATION
+        // ============================================
+
+        function toggleHeatmap() {
+            if (heatmapLayer) {
+                map.removeLayer(heatmapLayer);
+                heatmapLayer = null;
+                showStatus('❌ Heatmap hidden', 'success');
+            } else {
+                const heatData = [];
+                crimeMarkers.eachLayer(layer => {
+                    const latlng = layer.getLatLng();
+                    heatData.push([latlng.lat, latlng.lng, 0.5]);
+                });
+
+                if (heatData.length === 0) {
+                    showStatus('⚠️ No crimes for heatmap', 'error');
+                    return;
+                }
+
+                heatmapLayer = L.heatLayer(heatData, {
+                    radius: 25,
+                    blur: 15,
+                    maxZoom: 17,
+                }).addTo(map);
+                showStatus('✅ Heatmap shown', 'success');
+            }
+        }
+
+        // ============================================
+        // CLEAR & RESET
+        // ============================================
+
+        function clearMap() {
+            if (!confirm('Clear all layers? (Police station will remain)')) return;
+            
+            crimeMarkers.clearLayers();
+            hotspotLayer.clearLayers();
+            routeLayer.clearLayers();
+            
+            if (routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
+            }
+            
+            if (heatmapLayer) {
+                map.removeLayer(heatmapLayer);
+                heatmapLayer = null;
+            }
+            
+            document.getElementById('routeInfoSection').style.display = 'none';
+            updateStats();
+            showStatus('🧹 Map cleared', 'success');
+        }
+
+        // ============================================
+        // STATISTICS UPDATE
+        // ============================================
+
+        async function updateStats() {
+            try {
+                const healthResp = await fetch(`${API_URL}/health`);
+                if (healthResp.ok) {
+                    const health = await healthResp.json();
+                    document.getElementById('totalCrimes').textContent = health.crime_count || '0';
+                    document.getElementById('totalHotspots').textContent = health.hotspot_count || '0';
+                }
+
+                const hotspotsResp = await fetch(`${API_URL}/api/hotspots?days_back=30`);
+                if (hotspotsResp.ok) {
+                    const hotspots = await hotspotsResp.json();
+                    const highRisk = hotspots.filter(h => h.risk_score >= 7).length;
+                    const avgRisk = hotspots.length ? 
+                        (hotspots.reduce((s, h) => s + h.risk_score, 0) / hotspots.length).toFixed(2) : '0.00';
+                    
+                    document.getElementById('highRiskZones').textContent = highRisk;
+                    document.getElementById('avgRisk').textContent = avgRisk;
+                }
+            } catch (e) {
+                console.error('Error updating stats:', e);
+            }
+        }
+
+        // ============================================
+        // SEARCH FUNCTIONALITY
+        // ============================================
+
+        async function handleSearch(e) {
+            if (e.key !== 'Enter') return;
+            const query = document.getElementById('searchBox').value.trim();
+            if (!query || query.length < 3) {
+                showStatus('⚠️ Type at least 3 characters', 'error');
+                return;
+            }
+
+            showLoading(true);
+            try {
+                const resp = await fetch(`${API_URL}/api/geocode?query=${encodeURIComponent(query)}`, { 
+                    method: 'POST' 
+                });
+                
+                if (!resp.ok) throw new Error('Geocode failed');
+                
+                const data = await resp.json();
+                if (data.success && data.location) {
+                    const { lat, lng } = data.location;
+                    map.setView([lat, lng], 15);
+                    
+                    L.marker([lat, lng])
+                        .addTo(map)
+                        .bindPopup(`<div class="popup-title">📍 ${data.name || query}</div>`)
+                        .openPopup();
+                    
+                    showStatus('✅ Location found', 'success');
+                } else {
+                    showStatus('🔍 Location not found in Uttarakhand', 'error');
+                }
+            } catch (err) {
+                console.error('Search error:', err);
+                showStatus('❌ Search failed', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+
+        (function init() {
+            console.log('🚔 Crime Hotspot System - Uttarakhand');
+            console.log('📍 Police Station:', POLICE_STATION.name);
+            console.log('🛣️ Max Route Distance:', MAX_ROUTE_DISTANCE_KM, 'km');
+            
+            loadCrimes();
+            updateStats();
+            
+            // Update stats every 60 seconds
+            setInterval(updateStats, 60000);
+            
+            showStatus('✅ System ready! Click "Add 20 Samples" to start', 'success');
+        })();
+
+    </script>
+</body>
+</html>

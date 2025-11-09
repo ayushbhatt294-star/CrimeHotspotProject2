@@ -1,0 +1,31 @@
+{
+  "stations": [
+    {
+      "id": "PS001",
+      "name": "Dehradun Central Police Station",
+      "latitude": 30.3165,
+      "longitude": 78.0322,
+      "address": "Rajpur Road, Dehradun, Uttarakhand 248001",
+      "district": "Dehradun",
+      "state": "Uttarakhand",
+      "phone": "0135-2740000",
+      "email": "dehradun.police@uk.gov.in",
+      "is_primary": true,
+      "jurisdiction_areas": [
+        "Karanpur",
+        "Clock Tower",
+        "Paltan Bazaar",
+        "Race Course",
+        "Prem Nagar",
+        "Dalanwala",
+        "Clement Town",
+        "Rajpur Road",
+        "Saharanpur Road",
+        "ISBT"
+      ]
+    }
+  ],
+  "primary_station": "PS001",
+  "max_route_distance_km": 20,
+  "region": "Dehradun, Uttarakhand"
+}
