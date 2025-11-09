@@ -173,7 +173,9 @@ st.markdown("""
 # ============================================
 # API CONFIGURATION
 # ============================================
-API_BASE_URL = "http://127.0.0.1:8000/api"
+API_BASE_URL = "https://crimehotspotproject2-1.onrender.com"
+
+
 
 def fetch_api_data(endpoint):
     """Fetch data from backend API with proper error handling"""
